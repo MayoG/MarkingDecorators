@@ -1,5 +1,6 @@
 def _make_registrar():
     registry = {}
+
     def registrar(func):
         registry[func.__name__] = func
         return func  # normally a decorator returns a wrapped function, 
@@ -8,10 +9,10 @@ def _make_registrar():
     return registrar
 
 
-
-class Routine():
+class Routine:
     extensions = _make_registrar()
     food = _make_registrar()
+
     def __init__(self):
         pass
     
