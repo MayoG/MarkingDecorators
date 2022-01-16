@@ -1,8 +1,8 @@
-from dec import class_functions_dictionary, MetaMark
+from dec import MetaMark
 
 
 class Bakery(metaclass=MetaMark):
-    cooking_styles = class_functions_dictionary()
+    cooking_styles = MetaMark.create_functions_dictionary()
 
     @cooking_styles("indian")
     def indian_backing(self):

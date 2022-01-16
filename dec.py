@@ -1,6 +1,8 @@
 from collections import defaultdict
 from functools import partial
 
+# Future update can be removed if we change the decorator from function to class and check the type of the attribute
+# instead of checking if it has this signature as attribute
 MY_CLASS_SIGNATURE = "MY_CLASS_SIGNATURE"
 
 
@@ -22,59 +24,62 @@ class MetaMark(type):
         key_registrar.registry[update_class] = key_registrar.registry[class_name]
         del key_registrar.registry[class_name]
 
+    @staticmethod
+    def create_functions_dictionary():
+        """Create a decorator for marking functions and storing them in a
+            dictionary by their class and their marking signature
+            Returns:
+                Decorator that stores its functions in the 'all' attribute.
+            Example usage:
+            >>> class Bakery(metaclass=MetaMark):
+            ...     cooking_styles = MetaMark.create_functions_dictionary()
+            ...
+            ...     @cooking_styles("indian")
+            ...     def indian_backing(self):
+            ...         pass
+            ...
+            ...     @cooking_styles("asian")
+            ...     def asian_backing(self):
+            ...         pass
+            ...
+            ...     @classmethod
+            ...     def get_cooking_styles(cls):
+            ...         return cls.cooking_styles.all(cls)
 
-def class_functions_dictionary():
-    """Create a decorator for marking functions and storing them in a
-    dictionary by their class and their marking signature
-    Returns:
-        Decorator that stores its functions in the 'all' attribute.
-    Example usage:
-    >>> class Bakery:
-    ...     cooking_styles = class_functions_dictionary()
-    ...
-    ...     @cooking_styles("indian")
-    ...     def indian_backing(self):
-    ...         pass
-    ...
-    ...     @cooking_styles("asian")
-    ...     def asian_backing(self):
-    ...         pass
-    ...
-    ...     @classmethod
-    ...     def get_cooking_styles(cls):
-    ...         return cls.cooking_styles.all(cls)
-    """
+            >>> print(Bakery.get_cooking_styles()) # {'indian': {<function Bakery.indian_backing at 0x03B68100>},
+            ...                                    #  'asian': {<function Bakery.asian_backing at 0x03B68148>}}
+            """
 
-    registry = defaultdict(lambda: defaultdict(set))
+        registry = defaultdict(lambda: defaultdict(set))
 
-    def key_registrar(keys_or_function):
-        if callable(keys_or_function):
-            # No key was given to the function, setting a defualt key
-            return register(keys="default_key", function=keys_or_function)
-        else:
-            return partial(register, keys=keys_or_function)
+        def key_registrar(keys_or_function):
+            if callable(keys_or_function):
+                # No key was given to the function, setting a defualt key
+                return register(keys="default_key", function=keys_or_function)
+            else:
+                return partial(register, keys=keys_or_function)
 
-    def register(function, keys):
-        function_class_name = function.__qualname__.split(".")[0]
+        def register(function, keys):
+            function_class_name = function.__qualname__.split(".")[0]
 
-        keys = [keys] if not isinstance(keys, list) else keys
+            keys = [keys] if not isinstance(keys, list) else keys
 
-        for key in keys:
-            registry[function_class_name][key].add(function)
+            for key in keys:
+                registry[function_class_name][key].add(function)
 
-        return function
+            return function
 
-    def get_functions(cls):
-        for class_object in registry:
-            if issubclass(cls, class_object):
-                for function_key, functions in registry[class_object].items():
-                    registry[cls][function_key].update(functions)
+        def get_functions(cls):
+            for class_object in registry:
+                if issubclass(cls, class_object):
+                    for function_key, functions in registry[class_object].items():
+                        registry[cls][function_key].update(functions)
 
-        return registry[cls]
+            return registry[cls]
 
-    key_registrar.all = get_functions
-    key_registrar.registry = registry
+        key_registrar.all = get_functions
+        key_registrar.registry = registry
 
-    key_registrar.MY_CLASS_SIGNATURE = MY_CLASS_SIGNATURE
+        key_registrar.MY_CLASS_SIGNATURE = MY_CLASS_SIGNATURE
 
-    return key_registrar
+        return key_registrar
