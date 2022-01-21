@@ -1,5 +1,6 @@
 from collections import defaultdict
 from functools import partial
+from inspect import isclass
 
 # Future update can be removed if we change the decorator from function to class and check the type of the attribute
 # instead of checking if it has this signature as attribute
@@ -69,7 +70,9 @@ class MetaMark(type):
 
             return function
 
-        def get_functions(cls):
+        def get_functions(class_or_object):
+            cls = class_or_object if isclass(class_or_object) else type(class_or_object)
+
             for class_object in registry:
                 if issubclass(cls, class_object):
                     for function_key, functions in registry[class_object].items():
